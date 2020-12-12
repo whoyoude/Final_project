@@ -8,9 +8,9 @@ TIM_HandleTypeDef htim7;
 UART_HandleTypeDef uart_init1;
 uint16_t x[200];
 uint16_t y[200];
-extern uint16_t lose[];
-extern uint16_t jump[];
-extern uint16_t start[];
+extern uint16_t lose[];//Sound effect triggered when hit the obstacle
+extern uint16_t jump[];//Sound effect triggered when hit jump
+extern uint16_t start[];//Sound effect trigger when game start
 int update_screen_flag=0;
 int update_game_counter=0;
 float time=0;
@@ -31,7 +31,7 @@ struct game_def{
 
 void Init_timer_HAL();
 void configureDAC();
-void convert_magnitude();
+void convert_magnitude();//Convert element in the array of sound effect to make a better quality
 void play_music(uint8_t choice);//0 -> start ; 1-> lose; 2-> jump
 void update_screen();
 void update_game();
@@ -103,35 +103,34 @@ void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* hdac){
 
 void convert_magnitude(){
 	uint8_t v = 0;
-	for (uint16_t i = 0;i <43886;i++){
+	for (uint16_t i = 0;i <43886;i++){//Convert the magnitude of element in array of sound effect 'Lose'
 		v = lose[i]/2;
 		lose[i] = v;
 	}
-	for (uint16_t i = 0;i <22576;i++){
+	for (uint16_t i = 0;i <22576;i++){//Convert the magnitude of element in array of sound effect 'Jump'
 		v = jump[i]/2;
 		jump[i] = v;
 	}
-	for (uint16_t i = 0;i <22151;i++){
+	for (uint16_t i = 0;i <22151;i++){//Convert the magnitude of element in array of sound effect 'Start'
 		v = start[i]/2;
 		start[i] = v;
 	}
 }
 
 void play_music(uint8_t choice){
-	if(choice == 0){
+	if(choice == 0){//Play sound effect 'Start'
 		HAL_DAC_Start_DMA(&hDAC1, DAC_CHANNEL_1, (uint32_t*)start,22152, DAC_ALIGN_12B_R);
 	}
-	else if(choice == 1){
+	else if(choice == 1){//Play sound effect 'Jump'
 		HAL_DAC_Start_DMA(&hDAC1, DAC_CHANNEL_1, (uint32_t*)lose,43886, DAC_ALIGN_12B_R);
 	}
-	else if(choice == 2){
+	else if(choice == 2){//Play sound effect 'Lose'
 		HAL_DAC_Start_DMA(&hDAC1, DAC_CHANNEL_1, (uint32_t*)jump,22576, DAC_ALIGN_12B_R);
 	}
 }
 
 
 void Init_timer_HAL(){
-//	TIM_ClockConfigTypeDef sClockSourceConfig;
 	TIM_MasterConfigTypeDef sMasterConfig;
 
 	//Enable clock
@@ -140,16 +139,13 @@ void Init_timer_HAL(){
 	//Set the TIM to be TIM6 and the corresponding prescaler and period
 	htim6.Instance = TIM6;
 	htim6.Init.Prescaler =0;
-	htim6.Init.Period = 2448;
+	htim6.Init.Period = 2448;//The rate of overflow is 44100 Hz
 	htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
 	htim6.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 
 	//Initiate the timer
 	HAL_TIM_Base_Init(&htim6);
-
-//	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-//	HAL_TIM_ConfigClockSource(&htim6, &sClockSourceConfig);
-
+	
 	sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
 	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
 	HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig);
@@ -182,7 +178,7 @@ void configureDAC(){
 	HAL_DAC_Init(&hDAC1);
 
 	DAC_ChannelConfTypeDef dacchan;
-	dacchan.DAC_Trigger = DAC_TRIGGER_T6_TRGO;//THe DAC event triggered by TIM6
+	dacchan.DAC_Trigger = DAC_TRIGGER_T6_TRGO;//The DAC event triggered by TIM6
 	dacchan.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
 	HAL_DAC_ConfigChannel(&hDAC1, &dacchan, DAC_CHANNEL_1);
 }
@@ -200,7 +196,7 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac)
     	GPIO_InitStruct.Pull      = GPIO_NOPULL;
     	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    	//Set the DMA connect to DAC
+    	//Set the DMA and connect to DAC
     	 __HAL_RCC_DMA1_CLK_ENABLE();
     	 dma1.Instance = DMA1_Stream5;
     	 dma1.Init.Channel = DMA_CHANNEL_7;
